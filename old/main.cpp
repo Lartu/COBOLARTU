@@ -283,7 +283,7 @@ vector<Token> lextokens(const vector<string> & pretokens){
         
         // === PROCEDURE SECTION ===
         else if(procedureSection && dataSection){
-            if (pretoken == "DISPLAY" || pretoken == "ACCEPT" || pretoken == "JOIN" || pretoken == "STORE" || pretoken == "END"){
+            if (pretoken == "DISPLAY" || pretoken == "ACCEPT" || pretoken == "JOIN" || pretoken == "STORE" || pretoken == "END" || pretoken == "CALL"){
                 token.str_value = pretoken;
                 token.type = "statement";
                 tokens.push_back(token);
@@ -335,6 +335,11 @@ vector<Token> lextokens(const vector<string> & pretokens){
                 token.type = "var";
                 tokens.push_back(token);
             }
+            else if (pretoken.size() > 1 && pretoken[0] == '@'){
+                token.str_value = pretoken;
+                token.type = "subroutine";
+                tokens.push_back(token);
+            }
             else if (pretoken == "AND" || pretoken == "INTO" || pretoken == "BY" || pretoken == "IS" || pretoken == "TO"){
                 token.str_value = pretoken;
                 token.type = "token";
@@ -352,7 +357,17 @@ vector<Token> lextokens(const vector<string> & pretokens){
             }
             else if (pretoken == "POSITIVE" || pretoken == "NEGATIVE"){
                 token.str_value = pretoken;
-                token.type = "math-condition";
+                token.type = "math-sign";
+                tokens.push_back(token);
+            }
+            else if (pretoken == "NOT"){
+                token.str_value = pretoken;
+                token.type = "not";
+                tokens.push_back(token);
+            }
+            else if (pretoken == "EQUAL"){
+                token.str_value = pretoken;
+                token.type = "equal";
                 tokens.push_back(token);
             }
             else{
