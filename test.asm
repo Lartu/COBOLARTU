@@ -17,6 +17,9 @@ __str12: db "[0m y sobra ", 0
 __str13: db "", 10, "", 0
 __str14: db "7 módulo 2 da... [1;34m", 0
 __str15: db "[0m", 10, "", 0
+__str16: db "VAMOS A LOOPEAR ", 0
+__str17: db "", 10, "", 0
+__str18: db "Es menor a 50!", 10, "", 0
 digitSpace: times 100 db 0
 digitSpacePos times 8 db 0
 ;DATA SECTION
@@ -119,14 +122,14 @@ mov rdx, 0
 mov rax, 416
 mov rbx, 419
 idiv rbx
-mov [__varDECIMAL], rax
+mov [__varNUM], rax
 mov [__varREM], rdx
 mov rax, 1 ; write
 mov rdi, 1 ; STDOUT_FILENO
 mov rsi, __str11
 call strlen
 syscall
-mov rax, [__varDECIMAL]
+mov rax, [__varNUM]
 call printnumber
 mov rax, 1 ; write
 mov rdi, 1 ; STDOUT_FILENO
@@ -156,6 +159,46 @@ mov rax, 1 ; write
 mov rdi, 1 ; STDOUT_FILENO
 mov rsi, __str15
 call strlen
+syscall
+mov qword [__varNUM], 0
+_while1:
+mov rax, [__varNUM]
+mov rbx, 1000
+cmp rax, rbx
+jge _endWhile1
+mov rax, 1 ; write
+mov rdi, 1 ; STDOUT_FILENO
+mov rsi, __str16
+call strlen
+syscall
+mov rax, [__varNUM]
+call printnumber
+mov rax, 1
+add rax, [__varNUM]
+mov [__varNUM], rax
+mov rax, 1 ; write
+mov rdi, 1 ; STDOUT_FILENO
+mov rsi, __str17
+call strlen
+syscall
+jmp _while1
+_endWhile1:
+mov qword [__varNUM], 10
+_while2:
+mov rax, [__varNUM]
+mov rbx, 50
+cmp rax, rbx
+jge _endWhile2
+mov rax, 1 ; write
+mov rdi, 1 ; STDOUT_FILENO
+mov rsi, __str18
+call strlen
+syscall
+jmp _endWhile2
+jmp _while2
+_endWhile2:
+mov rax, 60 ;Exit
+mov rdi, 0 ;Exit code (0)
 syscall
 mov rax, 60 ;Exit
 mov rdi, 0 ;Exit code (0)

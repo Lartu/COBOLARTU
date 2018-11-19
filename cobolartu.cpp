@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <stack>
 #include "cpptrim/cpptrim.h"
 using namespace std;
 
@@ -11,6 +12,8 @@ string asm_values = ";VALUES SECTION\nsection .data";
 
 vector<pair<string, pair<int, int>>> variables;
 int str_count = 0;
+int while_count = 0;
+stack<int> while_stack;
 
 vector<pair<int, string> > stylize(vector<string> & lines){
     vector<pair<int, string> > new_lines;
@@ -447,18 +450,122 @@ void compile(vector<string> & line){
             //IS LESS THAN <VAR | NUMBER>
             //IS GREATER THAN OR EQUAL TO <VAR | NUMBER>
             //IS LESS THAN OR EQUAL TO <VAR | NUMBER>
-            //IS POSITIVE
-            //IS NEGATIVE
-            //IS EMPTY
-            // TODO cout << ">>>TERMINAR WHILE!<<<" << endl;
-            //TODO
-            return;
+            
+            ++while_count;
+            add_asm("_while" + to_string(while_count) + ":");
+            while_stack.push(while_count);
+            
+            int doPosition = 0;
+            for(int j = i; j < line.size(); ++j){
+                if(line[j] == "DO"){
+                    doPosition = j;
+                    break;
+                }
+            }
+            if(doPosition == 0) expectedError(line_number, "DO");
+            checkLineEnding(line_size, doPosition, line, line_number);
+            
+            string condition = "";
+            
+            //Get condition
+            int conditionLength = 0;
+            int j = i+1;
+            for(; j < doPosition; ++j){
+                if(is_variable(line[j]) || is_number(line[j]) || is_string(line[j])){
+                    if(condition == "") continue;
+                    else break;
+                }else{
+                    condition += line[j] + " ";
+                    ++conditionLength;
+                }
+            }
+            trim(condition);
+            
+            //Check syntax
+            if(!is_variable(line[i+1]) && !is_number(line[i+1]) && !is_string(line[i+1])) expectedError(line_number, "VARIABLE, TEXT or NUMBER (left side)");
+            if(!is_variable(line[j]) && !is_number(line[j]) && !is_string(line[j])) expectedError(line_number, "VARIABLE, TEXT or NUMBER (right side)");
+            if(doPosition != i+3 + conditionLength)
+                    unexpectedError(line_number, "EXTRA VARIABLE, TEXT OR NUMBER");
+            
+            string first = line[i+1];
+            string second = line[j];
+            
+            //String comparisons
+            if(is_string(first) || is_string(second) || var_is_txt(first) || var_is_txt(second)){
+                //TODO
+            }
+            //Numeric comparisons
+            else{
+                if(is_number(first) && is_number(second)){
+                    add_asm("mov rax, " + first);
+                    add_asm("mov rbx, " + second);
+                }
+                else if(is_number(first) && is_variable(second)){
+                    add_asm("mov rax, " + first);
+                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                }
+                else if(is_variable(first) && is_number(second)){
+                    add_asm("mov rax, [__var" + first.substr(1) + "]");
+                    add_asm("mov rbx, " + second);
+                }
+                else if(is_variable(first) && is_variable(second)){
+                    add_asm("mov rax, [__var" + first.substr(1) + "]");
+                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                }
+                else typeError(line_number);
+                //Compare
+                add_asm("cmp rax, rbx");
+                //Check condition
+                if(condition == "IS EQUAL TO"){
+                    add_asm("jne _endWhile" + to_string(while_count));
+                }
+                else if(condition == "IS NOT EQUAL TO"){
+                    add_asm("je _endWhile" + to_string(while_count));
+                }
+                else if(condition == "IS GREATER THAN"){
+                    add_asm("jle _endWhile" + to_string(while_count));
+                }
+                else if(condition == "IS LESS THAN"){
+                    add_asm("jge _endWhile" + to_string(while_count));
+                }
+                else if(condition == "IS GREATER THAN OR EQUAL TO"){
+                    add_asm("jl _endWhile" + to_string(while_count));
+                }
+                else if(condition == "IS LESS THAN OR EQUAL TO"){
+                    add_asm("jg _endWhile" + to_string(while_count));
+                }
+                else expectedError(line_number, "VALID CONDITION");
+            }
+            break;
         }
         
         else if(procedureSection && token == "REPEAT")
         {
             checkLineEnding(line_size, i, line, line_number);
-            //TODO
+            if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched REPEAT");
+            else{
+                add_asm("jmp _while"+to_string(while_stack.top()));
+                add_asm("_endWhile"+to_string(while_stack.top())+":");
+                while_stack.pop();
+            }
+        }
+        
+        else if(procedureSection && token == "CONTINUE")
+        {
+            checkLineEnding(line_size, i, line, line_number);
+            if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched CONTINUE");
+            else{
+                add_asm("jmp _while"+to_string(while_stack.top()));
+            }
+        }
+        
+        else if(procedureSection && token == "BREAK")
+        {
+            checkLineEnding(line_size, i, line, line_number);
+            if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched BREAK");
+            else{
+                add_asm("jmp _endWhile"+to_string(while_stack.top()));
+            }
         }
         
         else if(procedureSection && token == "IF")
@@ -476,7 +583,7 @@ void compile(vector<string> & line){
             //IS NEGATIVE
             //IS EMPTY
             // TODO cout << ">>>TERMINAR IF!<<<" << endl;
-            //TODO
+            //TODO ver si no puedo poner todo junto en el while
             return;
         }
         
@@ -755,6 +862,12 @@ int main (int argc, char** argv){
     vector<pair<int, string> > st_lines = stylize(lines);
     vector<vector<string>> token_lines = pretokenize(st_lines);
     compile_lines(token_lines);
+    
+    //Check if everything was closed
+    if(!while_stack.empty()){
+        cout << "\033[1;31mError: there may be one or more WHILEs without REPEAT\033[0m" << endl;
+        exit(1);
+    }
     
     //Add exit point
     add_asm("mov rax, 60 ;Exit");
