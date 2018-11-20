@@ -22,7 +22,7 @@
 #include <string>
 #include <stack>
 #include <algorithm>
-#include "lib/cpptrim.h"
+#include "../lib/cpptrim.h"
 using namespace std;
 
 string langName = "LARTOL";
@@ -1057,7 +1057,7 @@ int main (int argc, char** argv){
     add_asm("syscall");
     
     //Add .data section
-    asm_values += "\n%include \"libvalues.asm\"";
+    asm_values += "\n%include \"asm_libs/libvalues.asm\"";
     asm_values += "\ncrlf: db 10, 13, 0";
     asm_code = asm_values + "\n" + asm_code;
     
@@ -1065,7 +1065,7 @@ int main (int argc, char** argv){
     asm_code = "global _start\n" + asm_code;
     
     //Add external lib
-    add_asm("%include \"coblib.asm\"");
+    add_asm("%include \"asm_libs/coblib.asm\"");
     
     cout << asm_code << endl;
     
