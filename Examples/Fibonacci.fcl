@@ -1,0 +1,27 @@
+; FCL Fibonacci Example
+; Read more about this example here:
+; https://esolangs.org/wiki/Fibonacci_sequence
+
+DATA:
+$N IS NUMBER
+$I IS NUMBER
+$J IS NUMBER
+$SWAP IS NUMBER
+
+PROCEDURE:
+STORE 10 IN $N
+DISPLAY "Let's print the first "
+DISPLAY $N
+DISPLAY " fibonacci number(s) after 0 and 1\n"
+STORE 1 IN $I
+STORE $I IN $J
+WHILE $N IS GREATER THAN 0 DO
+    STORE $J IN $SWAP
+    ADD $I AND $SWAP IN $SWAP
+    STORE $J IN $I
+    STORE $SWAP IN $J
+    DISPLAY $J
+    DISPLAY "\n"
+    SUBTRACT 1 FROM $N IN $N
+REPEAT
+DISPLAY "\GREENDone!\NORMAL\n"

@@ -1,0 +1,26 @@
+; FCL Disan Count Example
+; A disan count is a program that counts down from a number outputing all
+; even numbers between that number and 0.
+
+DATA:
+$I IS NUMBER
+$RES IS NUMBER
+
+PROCEDURE:
+STORE 10 IN $I
+DISPLAY "Let's do a \GREENDisan Count\NORMAL from \BLUE"
+DISPLAY $I
+DISPLAY "\NORMAL to \RED0\NORMAL!\n"
+WHILE $I IS GREATER THAN 0 DO
+    ;Let's see if $I is even...
+    DIVIDE $I BY 2 IN _ REMAINDER IN $RES
+    IF $RES IS EQUAL TO 0 THEN
+        DISPLAY " 👉 "
+        DISPLAY $I
+        DISPLAY " is \YELLOWeven\NORMAL!\n"
+    END-IF
+    SUBTRACT 1 FROM $I IN $I
+REPEAT
+DISPLAY "Done! 😁\n"
+END
+

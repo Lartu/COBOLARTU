@@ -1,3 +1,5 @@
+;AUXILIAR SECTION
+
 printnumber: ;Imprime el número pasado por rax
 ;//TODO rehacer esto de forma que acepte negativos
     call printnumberaux
@@ -50,4 +52,17 @@ copystring: ;Copia de rbx a rax un string. Toma largo de rax por rdx.
     jmp .loop
     .ret:
     pop rcx
+    ret
+
+strlen: ;String length counter (string = rsi, length = rdx)
+    push rsi
+    mov rdx, 0
+    .loop:
+    cmp byte [rsi], 0
+    je .ret
+    inc rdx
+    inc rsi
+    jmp .loop
+    .ret:
+    pop rsi
     ret

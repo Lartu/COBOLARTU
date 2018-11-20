@@ -13,6 +13,9 @@
  - Subroutines
  - Decimals
  - Ways to open files
+ - Allow - in variable names
+ - Add support for negative number printing
+ - STDin
  */
 
 #include <fstream>
@@ -994,31 +997,16 @@ int main (int argc, char** argv){
     add_asm("mov rdi, 0 ;Exit code (0)");
     add_asm("syscall");
     
-    //Add auxiliar functions
-    add_asm(";AUXILIAR SECTION");
-    //Get string length
-    add_asm("strlen: ;String length counter (string = rsi, length = rdx)");
-    add_asm("push rsi");
-    add_asm("mov rdx, 0");
-    add_asm(".loop:");
-    add_asm("cmp byte [rsi], 0");
-    add_asm("je .ret");
-    add_asm("inc rdx");
-    add_asm("inc rsi");
-    add_asm("jmp .loop");
-    add_asm(".ret:");
-    add_asm("pop rsi");
-    add_asm("ret");
-    
     //Add data section
     asm_values += "\ndigitSpace: times 100 db 0";
     asm_values += "\ndigitSpacePos times 8 db 0";
     asm_code = asm_values + "\n" + asm_code;
     
-    asm_code = "%include \"coblib.asm\"\n" + asm_code;
-    
     //Add entry point
     asm_code = "global _start\n" + asm_code;
+    
+    //Add external lib
+    add_asm("%include \"coblib.asm\"");
     
     cout << asm_code << endl;
     
