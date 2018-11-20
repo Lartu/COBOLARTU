@@ -21,3 +21,4 @@ display "What country are you from, " $name "?" crlf
 display "> I'm from "
 accept $country
 display "Woah! I know somebody from " $country "!" crlf
+

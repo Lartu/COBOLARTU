@@ -5,7 +5,7 @@
  Things to add:
  - Arrays
  - Ways to get a char from a string
- - Ways to get the length of a string
+ - Ways to get the length of a string (usar la función de asm)
  - Logic operations
  - Text ifs
  - Text whiles
@@ -22,7 +22,7 @@
 #include <string>
 #include <stack>
 #include <algorithm>
-#include "cpptrim/cpptrim.h"
+#include "lib/cpptrim.h"
 using namespace std;
 
 string langName = "LARTOL";
