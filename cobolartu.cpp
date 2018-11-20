@@ -9,13 +9,11 @@
  - Logic operations
  - Text ifs
  - Text whiles
- - User input
  - Subroutines
  - Decimals
  - Ways to open files
- - Allow - in variable names
- - Add support for negative number printing
  - STDin
+ - Int to string conversion and viceversa
  */
 
 #include <fstream>
@@ -23,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <stack>
+#include <algorithm>
 #include "cpptrim/cpptrim.h"
 using namespace std;
 
@@ -309,48 +308,73 @@ void compile(vector<string> & line){
         else if(procedureSection && token == "DISPLAY") //DONE
         {
             //FORMAT:
-            //DISPLAY <VAR | STRING | NUMBER>
-            if(is_variable(line[++i])){
-                checkLineEnding(line_size, i, line, line_number);
-                 string var_name = line[i].substr(1);
-                if(var_is_num(var_name)){
-                    add_asm("mov rax, [__var" + var_name + "]");
-                    add_asm("call printnumber");
+            //DISPLAY *<VAR | STRING | NUMBER>
+            
+            for(int j = i+1; j < line.size(); ++j){
+                if(is_variable(line[j])){
+                    string var_name = line[j].substr(1);
+                    if(var_is_num(var_name)){
+                        add_asm("mov rax, [__var" + var_name + "]");
+                        add_asm("call number_to_string");
+                        add_asm("mov rax, 1 ; write");
+                        add_asm("mov rdi, 1 ; STDOUT_FILENO");
+                        add_asm("mov rsi, digit_area");
+                        add_asm("call strlen");
+                        add_asm("syscall");
+                    }
+                    else if(var_is_txt(var_name)){
+                        add_asm("mov rax, 1 ; write");
+                        add_asm("mov rdi, 1 ; STDOUT_FILENO");
+                        add_asm("mov rsi, __var" + var_name);
+                        add_asm("call strlen");
+                        add_asm("syscall");
+                    }
+                    else typeError(line_number);
                 }
-                else if(var_is_txt(var_name)){
+                else if(is_string(line[j])){
                     add_asm("mov rax, 1 ; write");
                     add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                    add_asm("mov rsi, __var" + var_name);
+                    add_asm("mov rsi, " + line[j]);
                     add_asm("call strlen");
                     add_asm("syscall");
                 }
-                else typeError(line_number);
+                else if(is_number(line[j])){
+                    add_asm("mov rax, " + line[j]);
+                    add_asm("call number_to_string");
+                    add_asm("mov rax, 1 ; write");
+                    add_asm("mov rdi, 1 ; STDOUT_FILENO");
+                    add_asm("mov rsi, digit_area");
+                    add_asm("call strlen");
+                    add_asm("syscall");
+                }
+                else if(line[j] == "CRLF"){
+                    add_asm("mov rax, 1 ; write");
+                    add_asm("mov rdi, 1 ; STDOUT_FILENO");
+                    add_asm("mov rsi, crlf");
+                    add_asm("call strlen");
+                    add_asm("syscall");
+                }
+                else expectedError(line_number, "VARIABLE, TEXT OR NUMBER");
             }
-            else if(is_string(line[i])){
-                checkLineEnding(line_size, i, line, line_number);
-                add_asm("mov rax, 1 ; write");
-                add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                add_asm("mov rsi, " + line[i]);
-                add_asm("call strlen");
-                add_asm("syscall");
-            }
-            else if(is_number(line[i])){
-                checkLineEnding(line_size, i, line, line_number);
-                add_asm("mov rax, " + line[i]);
-                add_asm("call printnumber");
-            }
-            else expectedError(line_number, "VARIABLE, TEXT OR NUMBER");
+            break;
         }
         
         else if(procedureSection && token == "ACCEPT")
         {
             //FORMAT:
-            //ACCEPT VAR
-            if(is_variable(line[++i])){
+            //ACCEPT strVAR
+            ++i;
+            if(is_variable(line[i]) && var_is_txt(line[i].substr(1))){
+                string destination_name = line[i].substr(1);
                 checkLineEnding(line_size, i, line, line_number);
-                //TODO
+                add_asm("call userinput");
+                add_asm("mov rax, __var" + destination_name);
+                add_asm("mov rbx, input_buffer");
+                add_asm("mov rdx, [__var" + destination_name + "_len]");
+                add_asm("call copystring");
             }
-            else expectedError(line_number, "VARIABLE");
+            else expectedError(line_number, "TEXT VARIABLE");
+            break;
         }
         
         else if(procedureSection && token == "JOIN")
@@ -408,6 +432,25 @@ void compile(vector<string> & line){
             // TODO ">>>TERMINAR CALL!<<<"
             //TODO
             return;
+        }
+        
+        else if(procedureSection && token == "SLEEP")
+        {
+            //FORMAT:
+            //SLEEP <VAR | NUMBER>
+            ++i;
+            checkLineEnding(line_size, i, line, line_number);
+            if(is_number(line[i])){
+                add_asm("mov rax, " + line[i]);
+                add_asm("call sleep");
+            }
+            else if(is_variable(line[i]) && var_is_num(line[i].substr(1))){
+                string var_name = line[i].substr(1);
+                add_asm("mov rax, [__var" + var_name + "]");
+                add_asm("call sleep");
+            }
+            else expectedError(line_number, "NUMBER or NUMBER VARIABLE");
+            break;
         }
         
         else if(procedureSection && token == "STORE") //DONE
@@ -941,8 +984,24 @@ void compile_lines(vector<vector<string>> & lines){
                 token = add_string(token);
             }
             //If token isn't empty
-            if(token.size() > 0)
+            if(token.size() > 0){
+                //If token is not number nor string nor variable, upercase it
+                if(!(is_number(token) || is_variable(token) || is_string(token))){
+                    for (auto & c: token) c = toupper(c);
+                }
+                //Replace - in variables:
+                if(is_variable(token)){
+                    replaceAll(token, "-", "__guion__");
+                    replaceAll(token, "?", "__questionmark__");
+                    replaceAll(token, "!", "__exclamation__");
+                    replaceAll(token, "#", "__numeral__");
+                    replaceAll(token, "&", "__ampersand__");
+                    replaceAll(token, "+", "__plus__");
+                    replaceAll(token, "*", "__times__");
+                    replaceAll(token, "/", "__barra__");
+                }
                 uncommented_line.push_back(token);
+            }
         }
         //If line si not empty
         if(uncommented_line.size() > 1){
@@ -997,9 +1056,9 @@ int main (int argc, char** argv){
     add_asm("mov rdi, 0 ;Exit code (0)");
     add_asm("syscall");
     
-    //Add data section
-    asm_values += "\ndigitSpace: times 100 db 0";
-    asm_values += "\ndigitSpacePos times 8 db 0";
+    //Add .data section
+    asm_values += "\n%include \"libvalues.asm\"";
+    asm_values += "\ncrlf: db 10, 13, 0";
     asm_code = asm_values + "\n" + asm_code;
     
     //Add entry point

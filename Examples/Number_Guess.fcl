@@ -1,0 +1,35 @@
+;FCL Number Operations Example
+
+data:
+$playerName is text 30
+$low is number
+$high is number
+$guess is text 3
+$sepisa is text 10
+
+procedure:
+display "Let's play the guessing game! What's your name?" crlf
+display "My name is \BLUE"
+accept $playerName
+display "\NORMAL"
+SLEEP 50
+display "H"
+SLEEP 50
+display "e"
+SLEEP 50
+display "l"
+SLEEP 50
+display "l"
+SLEEP 50
+display "o"
+SLEEP 50
+display " there, \GREEN" $playerName "\NORMAL! " crlf
+sleep 1000
+store 1 in $low
+store 100 in $high
+display "I'm thinking of a number between " $low " and " $high ". Can you guess it?" crlf
+sleep 1000
+store "AAAAABBBBB" in $sepisa
+display "Guess: "
+accept $guess
+display "Your guess is " $guess " -> " $sepisa crlf
