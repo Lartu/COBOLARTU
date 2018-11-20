@@ -1,3 +1,14 @@
+/*
+ FCL COMPILER
+ By Martín del Río - 2018
+ 
+ Things to add:
+ - Arrays
+ - Ways to get a char from a string
+ - Ways to get the length of a string
+ - Logic operations
+ */
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -14,6 +25,8 @@ vector<pair<string, pair<int, int>>> variables;
 int str_count = 0;
 int while_count = 0;
 stack<int> while_stack;
+int if_count = 0;
+stack<int> if_stack;
 
 vector<pair<int, string> > stylize(vector<string> & lines){
     vector<pair<int, string> > new_lines;
@@ -579,27 +592,124 @@ void compile(vector<string> & line){
             //IS LESS THAN <VAR | NUMBER>
             //IS GREATER THAN OR EQUAL TO <VAR | NUMBER>
             //IS LESS THAN OR EQUAL TO <VAR | NUMBER>
-            //IS POSITIVE
-            //IS NEGATIVE
-            //IS EMPTY
-            // TODO cout << ">>>TERMINAR IF!<<<" << endl;
-            //TODO ver si no puedo poner todo junto en el while
-            return;
+            
+            ++if_count;
+            add_asm("_if" + to_string(if_count) + ":");
+            if_stack.push(if_count);
+            if_stack.push(if_count);
+            
+            int doPosition = 0;
+            for(int j = i; j < line.size(); ++j){
+                if(line[j] == "THEN"){
+                    doPosition = j;
+                    break;
+                }
+            }
+            if(doPosition == 0) expectedError(line_number, "THEN");
+            checkLineEnding(line_size, doPosition, line, line_number);
+            
+            string condition = "";
+            
+            //Get condition
+            int conditionLength = 0;
+            int j = i+1;
+            for(; j < doPosition; ++j){
+                if(is_variable(line[j]) || is_number(line[j]) || is_string(line[j])){
+                    if(condition == "") continue;
+                    else break;
+                }else{
+                    condition += line[j] + " ";
+                    ++conditionLength;
+                }
+            }
+            trim(condition);
+            
+            //Check syntax
+            if(!is_variable(line[i+1]) && !is_number(line[i+1]) && !is_string(line[i+1])) expectedError(line_number, "VARIABLE, TEXT or NUMBER (left side)");
+            if(!is_variable(line[j]) && !is_number(line[j]) && !is_string(line[j])) expectedError(line_number, "VARIABLE, TEXT or NUMBER (right side)");
+            if(doPosition != i+3 + conditionLength)
+                    unexpectedError(line_number, "EXTRA VARIABLE, TEXT OR NUMBER");
+            
+            string first = line[i+1];
+            string second = line[j];
+            
+            //String comparisons
+            if(is_string(first) || is_string(second) || var_is_txt(first) || var_is_txt(second)){
+                //TODO
+            }
+            //Numeric comparisons
+            else{
+                if(is_number(first) && is_number(second)){
+                    add_asm("mov rax, " + first);
+                    add_asm("mov rbx, " + second);
+                }
+                else if(is_number(first) && is_variable(second)){
+                    add_asm("mov rax, " + first);
+                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                }
+                else if(is_variable(first) && is_number(second)){
+                    add_asm("mov rax, [__var" + first.substr(1) + "]");
+                    add_asm("mov rbx, " + second);
+                }
+                else if(is_variable(first) && is_variable(second)){
+                    add_asm("mov rax, [__var" + first.substr(1) + "]");
+                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                }
+                else typeError(line_number);
+                //Compare
+                add_asm("cmp rax, rbx");
+                //Check condition
+                if(condition == "IS EQUAL TO"){
+                    add_asm("jne _elseIf" + to_string(if_count));
+                }
+                else if(condition == "IS NOT EQUAL TO"){
+                    add_asm("je _elseIf" + to_string(if_count));
+                }
+                else if(condition == "IS GREATER THAN"){
+                    add_asm("jle _elseIf" + to_string(if_count));
+                }
+                else if(condition == "IS LESS THAN"){
+                    add_asm("jge _elseIf" + to_string(if_count));
+                }
+                else if(condition == "IS GREATER THAN OR EQUAL TO"){
+                    add_asm("jl _elseIf" + to_string(if_count));
+                }
+                else if(condition == "IS LESS THAN OR EQUAL TO"){
+                    add_asm("jg _elseIf" + to_string(if_count));
+                }
+                else expectedError(line_number, "VALID CONDITION");
+            }
+            break;
         }
         
         else if(procedureSection && token == "ELSE")
         {
             checkLineEnding(line_size, i, line, line_number);
-            //TODO
+            if(if_stack.empty()) expectedError(line_number, "IF for unmatched ELSE");
+            else{
+                add_asm("jmp _endIf"+to_string(if_stack.top()));
+                add_asm("_elseIf"+to_string(if_stack.top())+":");
+                if_stack.pop();
+            }
         }
         
         else if(procedureSection && token == "END-IF")
         {
             checkLineEnding(line_size, i, line, line_number);
-            //TODO
+            if(if_stack.empty()) expectedError(line_number, "IF for unmatched END-IF");
+            else{
+                int ifNumber = if_stack.top();
+                string endifAsm = "_endIf"+to_string(ifNumber)+":";
+                if_stack.pop();
+                if(!if_stack.empty() && if_stack.top() == ifNumber){
+                    if_stack.pop();
+                    endifAsm = "_elseIf"+to_string(ifNumber)+":\n" + endifAsm;
+                }
+                add_asm(endifAsm);
+            }
         }
         
-        else if(procedureSection && token == "END")
+        else if(procedureSection && token == "END") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             //TODO

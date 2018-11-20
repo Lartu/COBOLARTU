@@ -20,6 +20,7 @@ __str15: db "[0m", 10, "", 0
 __str16: db "VAMOS A LOOPEAR ", 0
 __str17: db "", 10, "", 0
 __str18: db "Es menor a 50!", 10, "", 0
+__str19: db "Es mayor a 50!", 10, "", 0
 digitSpace: times 100 db 0
 digitSpacePos times 8 db 0
 ;DATA SECTION
@@ -183,20 +184,25 @@ call strlen
 syscall
 jmp _while1
 _endWhile1:
-mov qword [__varNUM], 10
-_while2:
+mov qword [__varNUM], 30
+_if1:
 mov rax, [__varNUM]
 mov rbx, 50
 cmp rax, rbx
-jge _endWhile2
+jge _elseIf1
 mov rax, 1 ; write
 mov rdi, 1 ; STDOUT_FILENO
 mov rsi, __str18
 call strlen
 syscall
-jmp _endWhile2
-jmp _while2
-_endWhile2:
+jmp _endIf1
+_elseIf1:
+mov rax, 1 ; write
+mov rdi, 1 ; STDOUT_FILENO
+mov rsi, __str19
+call strlen
+syscall
+_endIf1:
 mov rax, 60 ;Exit
 mov rdi, 0 ;Exit code (0)
 syscall
