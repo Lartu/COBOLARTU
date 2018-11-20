@@ -12,6 +12,7 @@
  - User input
  - Subroutines
  - Decimals
+ - Ways to open files
  */
 
 #include <fstream>
@@ -980,7 +981,11 @@ int main (int argc, char** argv){
     
     //Check if everything was closed
     if(!while_stack.empty()){
-        cout << "\033[1;31mError: there may be one or more WHILEs without REPEAT\033[0m" << endl;
+        cout << "\033[1;31mError: there may be one or more WHILEs without REPEATs\033[0m" << endl;
+        exit(1);
+    }
+    if(!if_stack.empty()){
+        cout << "\033[1;31mError: there may be one or more IFs without END-IFs\033[0m" << endl;
         exit(1);
     }
     
