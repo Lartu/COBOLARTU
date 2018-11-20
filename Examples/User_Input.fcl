@@ -1,0 +1,23 @@
+;FCL Number Operations Example
+
+data:
+$name is text 20
+$age is text 2
+$country is text 15
+
+procedure:
+;Ask name
+display "Hello there! What's your \WHITEname\NORMAL?" crlf
+display "> My name is \BLUE"
+accept $name
+display "\NORMAL"
+;Ask age
+display "Hello there, " $name ". How old are you?" crlf
+display "> I'm "
+accept $age
+display "You've lived for " $age " years!" crlf
+;Ask country
+display "What country are you from, " $name "?" crlf
+display "> I'm from "
+accept $country
+display "Woah! I know somebody from " $country "!" crlf
