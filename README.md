@@ -8,6 +8,8 @@ Mauifish is a strongly-typed, procedural programming language loosely based on C
 
 ## About the Language
 
+## What can be Mauifish used for?
+
 ## Compiling
 
 ## Use
