@@ -7,6 +7,11 @@
  - Ways to get a char from a string
  - Ways to get the length of a string
  - Logic operations
+ - Text ifs
+ - Text whiles
+ - User input
+ - Subroutines
+ - Decimals
  */
 
 #include <fstream>
@@ -552,7 +557,7 @@ void compile(vector<string> & line){
             break;
         }
         
-        else if(procedureSection && token == "REPEAT")
+        else if(procedureSection && token == "REPEAT") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched REPEAT");
@@ -563,7 +568,7 @@ void compile(vector<string> & line){
             }
         }
         
-        else if(procedureSection && token == "CONTINUE")
+        else if(procedureSection && token == "CONTINUE") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched CONTINUE");
@@ -572,7 +577,7 @@ void compile(vector<string> & line){
             }
         }
         
-        else if(procedureSection && token == "BREAK")
+        else if(procedureSection && token == "BREAK") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched BREAK");
@@ -682,7 +687,7 @@ void compile(vector<string> & line){
             break;
         }
         
-        else if(procedureSection && token == "ELSE")
+        else if(procedureSection && token == "ELSE") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             if(if_stack.empty()) expectedError(line_number, "IF for unmatched ELSE");
@@ -693,7 +698,7 @@ void compile(vector<string> & line){
             }
         }
         
-        else if(procedureSection && token == "END-IF")
+        else if(procedureSection && token == "END-IF") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
             if(if_stack.empty()) expectedError(line_number, "IF for unmatched END-IF");
