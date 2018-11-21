@@ -1,5 +1,0 @@
-./FCL_compiler $@ >> fcl_output.asm
-nasm -f elf64 -o fcl_output.o fcl_output.asm
-ld -o out fcl_output.o
-rm fcl_output.*
-./out
