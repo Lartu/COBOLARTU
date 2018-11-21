@@ -16,7 +16,7 @@ I will complete this section later once the language reaches beta stage. Meanwhi
 A `compile` script is included in the repository. Run it and follow the instructions to compile Mauifish. Mauifish consists of two files, `mauifish` and `mauifish_compiler`. Both will be created in the `build` directory when `compile` is ran. If you plan to move Mauifish to anywhere else on your computer, be sure to put both files in the same folder, as one is required for the other to function.
 
 ## Use
-(To be completed)
+To compile a Mauifish source file run `mauifish <file to compile>`. Mauifish requieres [NASM](https://www.nasm.us/) to be installed in your system in order to work.
 
 ## Keywords
 (To be completed)
