@@ -7,6 +7,12 @@ echo "Compiled on $COMPILEDATE"
 #Fail if we stumble upon some error
 set -e
 
+#Check if we were given any parameters
+if [[ $# -eq 0 ]] ; then
+    echo 'Error: A filename is expected.'
+    exit 0
+fi
+
 #Create temporal files
 temp_asm=$(mktemp)
 temp_obj=$(mktemp)

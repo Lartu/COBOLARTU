@@ -174,17 +174,17 @@ bool is_subroutine(string token){
 }
 
 void typeError(int lineNumber){
-    cout << "\033[1;31mError: operator \033[1;37mtype mismatch\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
+    cerr << "\033[1;31mError: operator \033[1;37mtype mismatch\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
     exit(1);
 }
 
 void unexpectedError(int lineNumber, string token){
-    cout << "\033[1;31mError: unexpected \033[1;37m" << token << "\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
+    cerr << "\033[1;31mError: unexpected \033[1;37m" << token << "\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
     exit(1);
 }
 
 void expectedError(int lineNumber, string whatWasExpected){
-    cout << "\033[1;31mError: expected \033[1;37m" << whatWasExpected << "\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
+    cerr << "\033[1;31mError: expected \033[1;37m" << whatWasExpected << "\033[1;31m on line \033[1;37m" << lineNumber << "\033[1;31m.\033[0m" << endl;
     exit(1);
 }
 
@@ -1024,14 +1024,14 @@ int main (int argc, char** argv){
     vector<string> args(argv + 1, argv + argc);
     //Fail if file was not passed
     if(args.size() != 1){
-        cout << "I expect one and only one source file argument." << endl;
+        cerr << "\033[1;31mError: I expect one and only one source file argument.\033[0m" << endl;
         return 1;
     }
     //Load file
     ifstream file(args[0]);
     //Fail if the file couldn't be loaded
     if(!file.is_open()){
-        cout << "\033[1;31mError: I couldn't open the file.\033[0m" << endl;
+        cerr << "\033[1;31mError: I couldn't open the file.\033[0m" << endl;
         exit(1);
     }
     //Get file contents
@@ -1047,11 +1047,11 @@ int main (int argc, char** argv){
     
     //Check if everything was closed
     if(!while_stack.empty()){
-        cout << "\033[1;31mError: there may be one or more WHILEs without REPEATs\033[0m" << endl;
+        cerr << "\033[1;31mError: there may be one or more WHILEs without REPEATs\033[0m" << endl;
         exit(1);
     }
     if(!if_stack.empty()){
-        cout << "\033[1;31mError: there may be one or more IFs without END-IFs\033[0m" << endl;
+        cerr << "\033[1;31mError: there may be one or more IFs without END-IFs\033[0m" << endl;
         exit(1);
     }
     
