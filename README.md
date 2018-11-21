@@ -7,7 +7,7 @@
 Mauifish is a strongly-typed, procedural programming language loosely based on COBOL syntax. It's compiled and designed to be stable, robust, fast and predictable, while also remaining easy to read. This repository is for the x86-64 Linux compiler. At the moment, and as far as I know, this is the only Mauifish compiler there is.
 
 ## About the Language
-I will complete this section later once the language reaches beta stage. Meanwhile, it suffices to say that there are example programs in the `Examples` directory.
+This section is yet to be completed. Meanwhile, it suffices to say that there are example programs in the `Examples` directory.
 
 ## What can be Mauifish used for?
 (To be completed)
