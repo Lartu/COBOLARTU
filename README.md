@@ -11,6 +11,7 @@ Mauifish is a strongly-typed, procedural programming language loosely based on C
 ## What can be Mauifish used for?
 
 ## Compiling
+A `compile` script is included in the repository. Run it and follow the instructions to compile Mauifish. Mauifish consists of two files, `mauifish` and `mauifish_compiler`. Both will be created in the `build` directory when `compile` is ran. If you plan to move Mauifish to anywhere else on your computer, be sure to put both files in the same folder, as one is required for the other to function.
 
 ## Use
 
