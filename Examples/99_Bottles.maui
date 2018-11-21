@@ -1,0 +1,27 @@
+; Mauifish 99 Bottles of Beer Example
+; Read more about this example here:
+; https://esolangs.org/wiki/99_bottles_of_beer
+
+data:
+$bottles is number
+
+procedure:
+store 99 in $bottles
+while $bottles is greater than 1 do
+    display $bottles " bottles of beer on the wall," crlf
+    display $bottles " bottles of beer." crlf
+    display "Take one down, pass it around," crlf
+    subtract 1 from $bottles in $bottles
+    display $bottles " bottle"
+    ;Let's check if we have to display bottle or bottles
+    if $bottles is greater than 1 then
+        display "s"
+    end-if
+    display " of beer on the wall" crlf crlf
+repeat
+
+display "1 bottle of beer on the wall," crlf
+display "1 bottle of beer." crlf
+display "Take one down, pass it around," crlf
+display "No bottles of beer on the wall." crlf
+

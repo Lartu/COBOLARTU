@@ -1,0 +1,23 @@
+; Mauifish Prime Checker Example
+; Given a prime candidate $may-be-prime, the program outputs if the number
+; is actually a prime or not.
+
+DATA:
+$may-be-prime is number
+$i is number
+$res is number
+
+procedure:
+store 416419 in $may-be-prime
+display "Let's see if \WHITE" $may-be-prime "\NORMAL is prime..." crlf
+store 2 in $i
+WHILE $i is less than $may-be-prime do
+    divide $may-be-prime BY $i in _ remainder in $res
+    if $res is equal to 0 then
+        display "\RED" $may-be-prime " isn't prime :(\NORMAL" crlf
+        display "It can be divided by " $i crlf
+        end ;Exit the program
+    end-if
+    add 1 and $i in $i
+repeat
+display "\GREEN" $may-be-prime " is prime!!\NORMAL" crlf

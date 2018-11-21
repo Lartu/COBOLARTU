@@ -1,5 +1,0 @@
-; FCL Hello World Example
-
-PROCEDURE:
-DISPLAY "Hello World!\n"
-

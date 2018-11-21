@@ -13,6 +13,7 @@ echo "Mauifish $VERSION Compiler Script"
 echo "[*] Generating libraries..."
 cd asm_libs
 php generate.php coblib.asm 1
+php generate.php libvalues.asm 2
 cd ..
 
 #Create build directory

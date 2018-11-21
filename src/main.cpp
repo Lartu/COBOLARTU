@@ -1003,6 +1003,8 @@ void compile_lines(vector<vector<string>> & lines){
                     replaceAll(token, "+", "__plus__");
                     replaceAll(token, "*", "__times__");
                     replaceAll(token, "/", "__barra__");
+                    replaceAll(token, "(", "__par1__");
+                    replaceAll(token, ")", "__par2__");
                 }
                 uncommented_line.push_back(token);
             }

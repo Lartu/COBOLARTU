@@ -1,0 +1,5 @@
+; Mauifish Hello World Example
+
+procedure:
+display "Hello, world!" crlf
+

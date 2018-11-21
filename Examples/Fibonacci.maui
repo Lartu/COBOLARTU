@@ -1,0 +1,36 @@
+; Mauifish Fibonacci Example
+; Read more about this example here:
+; https://esolangs.org/wiki/Fibonacci_sequence
+
+data:
+$n is number            ;Ammount of fibonacci numbers to print
+$f(n) is number         ;f(n)
+$f(n+1) is number       ;f(n+1)
+$swap is number
+
+procedure:
+store 10 in $n
+display "Let's print the first " $n " fibonacci numbers!" crlf
+
+;Store default values
+store 0 in $f(n)
+store 1 in $f(n+1)
+
+;If $n is equal to 1 or 2
+if $n is greater than or equal to 1 then
+    display $f(n) crlf
+end-if
+if $n is greater than or equal to 2 then
+    display $f(n+1) crlf
+end-if
+
+subtract 2 from $n in $n
+while $n is greater than 0 do
+    store $f(n+1) in $swap
+    add $f(n) and $f(n+1) in $f(n+1)
+    store $swap in $f(n)
+    display $f(n+1) crlf
+    subtract 1 from $n in $n
+repeat
+
+display "\GREENDone!\NORMAL" crlf
