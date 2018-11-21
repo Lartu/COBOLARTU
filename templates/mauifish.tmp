@@ -1,0 +1,31 @@
+#Say stuff
+echo "Mauifish Compiler Version $VERSION"
+echo "Created by Martín del Río"
+echo "https://github.com/Lartu/Mauifish"
+echo "Compiled on $COMPILEDATE"
+
+#Fail if we stumble upon some error
+set -e
+
+#Create temporal files
+temp_asm=$(mktemp)
+temp_obj=$(mktemp)
+
+#Get this script's absolute path
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+#Compile
+printf "Compiling... "
+$DIR/mauifish_compiler $@ >> $temp_asm
+
+#Assemble!
+printf "Assembling... "
+nasm -f elf64 -o $temp_obj $temp_asm
+ld -o $@.out $temp_obj
+
+#Remove temporal files
+rm ${temp_asm}
+rm ${temp_obj}
+
+#Done!
+echo "Done!"

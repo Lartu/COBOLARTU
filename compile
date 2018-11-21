@@ -1,1 +1,39 @@
-g++ src/compiler.cpp -std=c++11 -o FCL_compiler
+#!/usr/bin/env bash
+
+#Set Mauifish version
+VERSION="0.4"
+
+#Fail if we stumble upon some error
+set -e
+
+#Say Hi
+echo "Mauifish $VERSION Compiler Script"
+
+#Regenerate asm libraries
+echo "[*] Generating libraries..."
+cd asm_libs
+php generate.php coblib.asm 1
+cd ..
+
+#Create build directory
+echo "[*] Creating build directory..."
+mkdir -p build
+
+#Compile mauifish compiler
+echo "[*] Compiling Mauifish..."
+g++ src/main.cpp -std=c++11 -o build/mauifish_compiler
+
+#Generate compiler script
+echo "[*] Generating assembler script..."
+echo "#!/usr/bin/env bash" > build/mauifish
+echo "VERSION=\"$VERSION\"" >> build/mauifish
+echo "COMPILEDATE=\"`date`\"" >> build/mauifish
+cat templates/mauifish.tmp >> build/mauifish
+
+#Tell the user how to not mess things up
+echo "[*] Done!"
+echo "Mauifish can now be found in the build directory."
+echo "NOTE: If you are going to move it to somewhere else"
+echo "on your computer, be sure to put the files mauifish"
+echo "and mauifish_compiler in the same directory."
+echo "Have fun!"

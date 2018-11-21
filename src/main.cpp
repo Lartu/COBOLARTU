@@ -27,7 +27,7 @@ using namespace std;
 
 string langName = "LARTOL";
 string asm_code = "";
-string asm_values = ";VALUES SECTION\nsection .data";
+string asm_values = ";VALUES SECTION\nsection .data\n";
 
 vector<pair<string, pair<int, int>>> variables;
 int str_count = 0;
@@ -58,6 +58,10 @@ void add_asm(string txt){
     asm_code += txt + "\n";
 }
 
+void add_asm_values(string txt){
+    asm_values += txt + "\n";
+}
+
 void replaceAll(std::string& str, const std::string& from, const std::string& to) {
     if(from.empty())
         return;
@@ -83,7 +87,7 @@ string add_string(string token){
     replaceAll(token, "\\WHITE", "\033[1;37m");
     //Reiniciar el estilo mide 4 bytes
     replaceAll(token, "\\NORMAL", "\033[0m");
-    asm_values += "\n" + strname + ": db " + token + ", 0";
+    add_asm_values(strname + ": db " + token + ", 0");
     return strname;
 }
 
@@ -1027,8 +1031,8 @@ int main (int argc, char** argv){
     ifstream file(args[0]);
     //Fail if the file couldn't be loaded
     if(!file.is_open()){
-        cout << "I couldn't open the file." << endl;
-        return 1;
+        cout << "\033[1;31mError: I couldn't open the file.\033[0m" << endl;
+        exit(1);
     }
     //Get file contents
     vector<string> lines;
@@ -1057,15 +1061,14 @@ int main (int argc, char** argv){
     add_asm("syscall");
     
     //Add .data section
-    asm_values += "\n%include \"asm_libs/libvalues.asm\"";
-    asm_values += "\ncrlf: db 10, 13, 0";
+    #include "../lib/libvalues.cpp"
     asm_code = asm_values + "\n" + asm_code;
     
     //Add entry point
     asm_code = "global _start\n" + asm_code;
     
     //Add external lib
-    add_asm("%include \"asm_libs/coblib.asm\"");
+    #include "../lib/coblib.cpp"
     
     cout << asm_code << endl;
     
