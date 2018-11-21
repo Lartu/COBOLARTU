@@ -1,5 +1,5 @@
 /*
- FCL COMPILER
+ Mauifish COMPILER
  By Martín del Río - 2018
  
  Things to add:
@@ -25,7 +25,6 @@
 #include "../lib/cpptrim.h"
 using namespace std;
 
-string langName = "LARTOL";
 string asm_code = "";
 string asm_values = ";VALUES SECTION\nsection .data\n";
 
