@@ -13,25 +13,12 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-#Create temporal files
-temp_asm=$(mktemp)
-temp_obj=$(mktemp)
-
 #Get this script's absolute path
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 #Compile
 printf "Compiling... "
-$DIR/mauifish_compiler $@ >> $temp_asm
+$DIR/mauifish_compiler $@ > out.maui
 
-#Assemble!
-printf "Assembling... "
-nasm -f elf64 -o $temp_obj $temp_asm
-ld -o $@.out $temp_obj
-
-#Remove temporal files
-rm ${temp_asm}
-rm ${temp_obj}
-
-#Done!
+#Done
 echo "Done!"
