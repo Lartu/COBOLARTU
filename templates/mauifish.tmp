@@ -18,7 +18,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 #Compile
 printf "Compiling... "
-$DIR/mauifish_compiler $@ > out.maui
+$DIR/mauifish_compiler $@ > out.nvm
 
 #Done
 echo "Done!"
