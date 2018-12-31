@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 
 #Set Mauifish version
-VERSION="0.4"
+VERSION="0.5"
 
 #Fail if we stumble upon some error
 set -e
 
 #Say Hi
 echo "Mauifish $VERSION Compiler Script"
-
-#Regenerate asm libraries
-echo "[*] Generating libraries..."
-cd asm_libs
-php generate.php coblib.asm 1
-php generate.php libvalues.asm 2
-cd ..
 
 #Create build directory
 echo "[*] Creating build directory..."
@@ -33,7 +26,11 @@ cat templates/mauifish.tmp >> build/mauifish
 
 #Tell the user how to not mess things up
 echo "[*] Done!"
+echo ""
 echo "Mauifish can now be found in the build directory."
+echo "To compile a Mauifish script use"
+echo "   mauifish <yourscript>"
+echo ""
 echo "NOTE: If you are going to move it to somewhere else"
 echo "on your computer, be sure to put the files mauifish"
 echo "and mauifish_compiler in the same directory."

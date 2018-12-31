@@ -1,0 +1,26 @@
+; FCL Disan Count Example
+; A disan count is a program that counts down from a number outputing all
+; even numbers between that number and 0.
+
+data:
+$i is number
+$res is number
+$texto is text
+
+procedure:
+display "Enter a number: "
+store 20 in $i
+accept $i
+display "Let's do a Disan Count from " $i " to 0!" crlf
+while $i is greater than or equal to 0 do
+    ;Let's see if $I is even...
+    modulo $i by 2 in $res
+    if $res is equal to 0 then
+		join $i and " is even!" in $texto
+		display $texto crlf
+        display " -> " $i " is even!" crlf
+    end-if
+    subtract 1 from $i in $i
+repeat
+display "Done! 😁" crlf
+

@@ -163,7 +163,7 @@ bool is_variable(string token){
 }
 
 bool is_string(string token){
-    if(token.size() > 5 && token.substr(0, 5) == "__str") return true;
+    if(token.size() >= 2 && token[0] == '"' && token[token.size() - 1] == '"') return true;
     return false;
 }
 
@@ -270,8 +270,6 @@ void compile(vector<string> & line){
             dataSection = true;
             procedureSection = true;
             add_asm(";PROCEDURE SECTION");
-            add_asm("section .text");
-            add_asm("_start:");
         }
         
         else if(dataSection && is_variable(token)) //DONE
@@ -283,25 +281,19 @@ void compile(vector<string> & line){
             
             if(line[++i] == "IS"){
                 if(line[++i] == "NUMBER"){
-                    int decimals = 0;
-                    if(i + 3 == line_size && line[i+1] == "WITH"  && line[i+3] == "DECIMALS" && is_number(line[i+2])){
-                        decimals = stoi(line[i+2]);
-                        checkLineEnding(line_size, i+3, line, line_number);
-                    }
-                    else checkLineEnding(line_size, i, line, line_number);
-                    add_var(var_name, "dec_"+to_string(decimals));
-                    add_asm("__var"+var_name+": dq 0");
-                    if(decimals > 0) i+=3;
+                    checkLineEnding(line_size, i, line, line_number);
+                    add_var(var_name, "num");
+                    add_asm("0");
+                    add_asm("TOAUX:var_name");
+                    break;
                 }
                 else if(line[i] == "TEXT"){
                     //Line must only contain this and a number
-                    checkLineEnding(line_size, i+1, line, line_number);
-                    if(is_number(line[++i])){
-                        add_var(var_name, "txt");
-                        add_asm("__var"+var_name+": times " + line[i] + " db 0");
-                        add_asm("__var"+var_name+"_len: dq " + line[i]);
-                    }
-                    else unexpectedError(line_number, line[i]);
+                    checkLineEnding(line_size, i, line, line_number);
+					add_var(var_name, "txt");
+					add_asm("\"\"");
+					add_asm("TOAUX:"+var_name);
+					break;
                 }
                 else unexpectedError(line_number, line[i]);
             }
@@ -317,52 +309,33 @@ void compile(vector<string> & line){
                 if(is_variable(line[j])){
                     string var_name = line[j].substr(1);
                     if(var_is_num(var_name)){
-                        add_asm("mov rax, [__var" + var_name + "]");
-                        add_asm("call number_to_string");
-                        add_asm("mov rax, 1 ; write");
-                        add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                        add_asm("mov rsi, digit_area");
-                        add_asm("call strlen");
-                        add_asm("syscall");
+                        add_asm("AUX:"+var_name);
+                        add_asm("PRINT");
                     }
                     else if(var_is_txt(var_name)){
-                        add_asm("mov rax, 1 ; write");
-                        add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                        add_asm("mov rsi, __var" + var_name);
-                        add_asm("call strlen");
-                        add_asm("syscall");
+                        add_asm("AUX:"+var_name);
+                        add_asm("PRINT");
                     }
                     else typeError(line_number);
                 }
                 else if(is_string(line[j])){
-                    add_asm("mov rax, 1 ; write");
-                    add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                    add_asm("mov rsi, " + line[j]);
-                    add_asm("call strlen");
-                    add_asm("syscall");
+                    add_asm(line[j]);
+                    add_asm("PRINT");
                 }
                 else if(is_number(line[j])){
-                    add_asm("mov rax, " + line[j]);
-                    add_asm("call number_to_string");
-                    add_asm("mov rax, 1 ; write");
-                    add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                    add_asm("mov rsi, digit_area");
-                    add_asm("call strlen");
-                    add_asm("syscall");
+                    add_asm(line[j]);
+                    add_asm("PRINT");
                 }
                 else if(line[j] == "CRLF"){
-                    add_asm("mov rax, 1 ; write");
-                    add_asm("mov rdi, 1 ; STDOUT_FILENO");
-                    add_asm("mov rsi, crlf");
-                    add_asm("call strlen");
-                    add_asm("syscall");
+                    add_asm("\"\"");
+                    add_asm("PRINTLN");
                 }
                 else expectedError(line_number, "VARIABLE, TEXT OR NUMBER");
             }
             break;
         }
         
-        else if(procedureSection && token == "ACCEPT")
+        else if(procedureSection && token == "ACCEPT") //DONE
         {
             //FORMAT:
             //ACCEPT strVAR
@@ -370,17 +343,21 @@ void compile(vector<string> & line){
             if(is_variable(line[i]) && var_is_txt(line[i].substr(1))){
                 string destination_name = line[i].substr(1);
                 checkLineEnding(line_size, i, line, line_number);
-                add_asm("call userinput");
-                add_asm("mov rax, __var" + destination_name);
-                add_asm("mov rbx, input_buffer");
-                add_asm("mov rdx, [__var" + destination_name + "_len]");
-                add_asm("call copystring");
+                add_asm("INPUT");
+                add_asm("TOAUX:" + destination_name);
             }
-            else expectedError(line_number, "TEXT VARIABLE");
+            else if(is_variable(line[i]) && var_is_num(line[i].substr(1))){
+                string destination_name = line[i].substr(1);
+                checkLineEnding(line_size, i, line, line_number);
+                add_asm("INPUT");
+                add_asm("TO-NUM");
+                add_asm("TOAUX:" + destination_name);
+            }
+            else expectedError(line_number, "VARIABLE");
             break;
         }
         
-        else if(procedureSection && token == "JOIN")
+        else if(procedureSection && token == "JOIN") //DONE
         {
             //FORMAT:
             //JOIN <VAR | STRING | NUMBER> AND <VAR | STRING | NUMBER> IN VAR
@@ -396,36 +373,71 @@ void compile(vector<string> & line){
             //CHECK <VAR | STRING | NUMBER> & <VAR | STRING | NUMBER>
             //TODO: Capaz acá debería ver el tipo de la variable aparte
             if(is_variable(line[i+1]) && is_variable(line[i+3])){
-                //TODO
+                add_asm("AUX:"+line[i+1].substr(1));
+                if(var_is_num(line[i+1].substr(1)))
+					add_asm("TO-STR");
+                add_asm("AUX:"+line[i+3].substr(1));
+                if(var_is_num(line[i+3].substr(1)))
+					add_asm("TO-STR");
             }
             else if(is_variable(line[i+1]) && is_number(line[i+3])){
-                //TODO
+                add_asm("AUX:"+line[i+1].substr(1));
+                if(var_is_num(line[i+1].substr(1)))
+					add_asm("TO-STR");
+                add_asm(line[i+3]);
+                add_asm("TO-STR");
             }
             else if(is_variable(line[i+1]) && is_string(line[i+3])){
-                //TODO
+                add_asm("AUX:"+line[i+1].substr(1));
+                if(var_is_num(line[i+1].substr(1)))
+					add_asm("TO-STR");
+                add_asm(line[i+3]);
             }
             else if(is_number(line[i+1]) && is_variable(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm("TO-STR");
+                add_asm("AUX:"+line[i+3].substr(1));
+                if(var_is_num(line[i+3].substr(1)))
+					add_asm("TO-STR");
             }
             else if(is_number(line[i+1]) && is_number(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm("TO-STR");
+                add_asm(line[i+3]);
+                add_asm("TO-STR");
             }
             else if(is_number(line[i+1]) && is_string(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
             }
             else if(is_string(line[i+1]) && is_variable(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm("AUX:"+line[i+3].substr(1));
+                if(var_is_num(line[i+3].substr(1)))
+					add_asm("TO-STR");
             }
             else if(is_string(line[i+1]) && is_number(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
+                add_asm("TO-STR");
             }
             else if(is_string(line[i+1]) && is_string(line[i+3])){
-                //TODO
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
             }
             else expectedError(line_number, "VARIABLE, TEXT OR NUMBER");
             
-            //Increment i
-            i += 5;
+            add_asm("JOIN");
+            
+            string destination = line[i+5].substr(1);
+            
+            if(var_is_num(destination)){
+				add_asm("TO-NUM");
+			}
+			
+			add_asm("TOAUX:"+destination);
+            
+            break;
         }
         
         else if(procedureSection && token == "CALL")
@@ -439,20 +451,7 @@ void compile(vector<string> & line){
         
         else if(procedureSection && token == "SLEEP")
         {
-            //FORMAT:
-            //SLEEP <VAR | NUMBER>
-            ++i;
-            checkLineEnding(line_size, i, line, line_number);
-            if(is_number(line[i])){
-                add_asm("mov rax, " + line[i]);
-                add_asm("call sleep");
-            }
-            else if(is_variable(line[i]) && var_is_num(line[i].substr(1))){
-                string var_name = line[i].substr(1);
-                add_asm("mov rax, [__var" + var_name + "]");
-                add_asm("call sleep");
-            }
-            else expectedError(line_number, "NUMBER or NUMBER VARIABLE");
+            //TODO
             break;
         }
         
@@ -479,32 +478,28 @@ void compile(vector<string> & line){
                     typeError(line_number);
                 //Copy values
                 if(var_is_num(var_name)){
-                    add_asm("mov rax, [__var"+var_name+"]");
-                    add_asm("mov qword [__var"+destination_name+"], rax");
+					add_asm("AUX:"+var_name);
+					add_asm("TOAUX:"+destination_name);
                 }
                 else if(var_is_txt(var_name)){
-                    add_asm("mov rax, __var" + destination_name);
-                    add_asm("mov rbx, __var" + var_name);
-                    add_asm("mov rdx, [__var" + destination_name + "_len]");
-                    add_asm("call copystring");
+                    add_asm("AUX:"+var_name);
+					add_asm("TOAUX:"+destination_name);
                 }
                 else typeError(line_number);
             }
             else if(is_number(line[i+1])){
                 if(!var_is_num(destination_name)) typeError(line_number);
-                add_asm("mov qword [__var"+destination_name+"], " + line[i+1]);
+                add_asm(line[i+1]);
+                add_asm("TOAUX:"+destination_name);
             }
             else if(is_string(line[i+1])){
                 if(!var_is_txt(destination_name)) typeError(line_number);
-                add_asm("mov rax, __var" + destination_name);
-                add_asm("mov rbx, " + line[i+1]);
-                add_asm("mov rdx, [__var" + destination_name + "_len]");
-                add_asm("call copystring");
+                add_asm(line[i+1]);
+                add_asm("TOAUX:"+destination_name);
             }
             else expectedError(line_number, "VARIABLE, TEXT OR NUMBER");
             
-            //Increment i
-            i += 3;
+            break;
         }
         
         else if(procedureSection && token == "WHILE")
@@ -520,7 +515,7 @@ void compile(vector<string> & line){
             //IS LESS THAN OR EQUAL TO <VAR | NUMBER>
             
             ++while_count;
-            add_asm("_while" + to_string(while_count) + ":");
+            add_asm("@while" + to_string(while_count));
             while_stack.push(while_count);
             
             int doPosition = 0;
@@ -565,42 +560,46 @@ void compile(vector<string> & line){
             //Numeric comparisons
             else{
                 if(is_number(first) && is_number(second)){
-                    add_asm("mov rax, " + first);
-                    add_asm("mov rbx, " + second);
+                    add_asm(first);
+                    add_asm(second);
                 }
                 else if(is_number(first) && is_variable(second)){
-                    add_asm("mov rax, " + first);
-                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                    add_asm(first);
+                    add_asm("AUX:"+second.substr(1));
                 }
                 else if(is_variable(first) && is_number(second)){
-                    add_asm("mov rax, [__var" + first.substr(1) + "]");
-                    add_asm("mov rbx, " + second);
+                    add_asm("AUX:"+first.substr(1));
+                    add_asm(second);
                 }
                 else if(is_variable(first) && is_variable(second)){
-                    add_asm("mov rax, [__var" + first.substr(1) + "]");
-                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                    add_asm("AUX:" + first.substr(1));
+                    add_asm("AUX:" + second.substr(1));
                 }
                 else typeError(line_number);
-                //Compare
-                add_asm("cmp rax, rbx");
                 //Check condition
                 if(condition == "IS EQUAL TO"){
-                    add_asm("jne _endWhile" + to_string(while_count));
+					add_asm("==\nNOT");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else if(condition == "IS NOT EQUAL TO"){
-                    add_asm("je _endWhile" + to_string(while_count));
+                    add_asm("==");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else if(condition == "IS GREATER THAN"){
-                    add_asm("jle _endWhile" + to_string(while_count));
+                    add_asm("<=");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else if(condition == "IS LESS THAN"){
-                    add_asm("jge _endWhile" + to_string(while_count));
+                    add_asm(">=");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else if(condition == "IS GREATER THAN OR EQUAL TO"){
-                    add_asm("jl _endWhile" + to_string(while_count));
+                    add_asm("<");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else if(condition == "IS LESS THAN OR EQUAL TO"){
-                    add_asm("jg _endWhile" + to_string(while_count));
+                    add_asm(">");
+                    add_asm("IF:endWhile" + to_string(while_count));
                 }
                 else expectedError(line_number, "VALID CONDITION");
             }
@@ -612,8 +611,8 @@ void compile(vector<string> & line){
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched REPEAT");
             else{
-                add_asm("jmp _while"+to_string(while_stack.top()));
-                add_asm("_endWhile"+to_string(while_stack.top())+":");
+                add_asm("JMP:while"+to_string(while_stack.top()));
+                add_asm("@endWhile"+to_string(while_stack.top()));
                 while_stack.pop();
             }
         }
@@ -623,7 +622,7 @@ void compile(vector<string> & line){
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched CONTINUE");
             else{
-                add_asm("jmp _while"+to_string(while_stack.top()));
+                add_asm("JMP:while"+to_string(while_stack.top()));
             }
         }
         
@@ -632,7 +631,7 @@ void compile(vector<string> & line){
             checkLineEnding(line_size, i, line, line_number);
             if(while_stack.empty()) expectedError(line_number, "WHILE for unmatched BREAK");
             else{
-                add_asm("jmp _endWhile"+to_string(while_stack.top()));
+                add_asm("JMP:endWhile"+to_string(while_stack.top()));
             }
         }
         
@@ -649,7 +648,7 @@ void compile(vector<string> & line){
             //IS LESS THAN OR EQUAL TO <VAR | NUMBER>
             
             ++if_count;
-            add_asm("_if" + to_string(if_count) + ":");
+            add_asm("@if" + to_string(if_count));
             if_stack.push(if_count);
             if_stack.push(if_count);
             
@@ -695,42 +694,46 @@ void compile(vector<string> & line){
             //Numeric comparisons
             else{
                 if(is_number(first) && is_number(second)){
-                    add_asm("mov rax, " + first);
-                    add_asm("mov rbx, " + second);
+                    add_asm(first);
+                    add_asm(second);
                 }
                 else if(is_number(first) && is_variable(second)){
-                    add_asm("mov rax, " + first);
-                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                    add_asm(first);
+                    add_asm("AUX:" + second.substr(1));
                 }
                 else if(is_variable(first) && is_number(second)){
-                    add_asm("mov rax, [__var" + first.substr(1) + "]");
-                    add_asm("mov rbx, " + second);
+                    add_asm("AUX:" + first.substr(1));
+                    add_asm(second);
                 }
                 else if(is_variable(first) && is_variable(second)){
-                    add_asm("mov rax, [__var" + first.substr(1) + "]");
-                    add_asm("mov rbx, [__var" + second.substr(1) + "]");
+                    add_asm("AUX:" + first.substr(1));
+                    add_asm("AUX:" + second.substr(1));
                 }
                 else typeError(line_number);
-                //Compare
-                add_asm("cmp rax, rbx");
                 //Check condition
                 if(condition == "IS EQUAL TO"){
-                    add_asm("jne _elseIf" + to_string(if_count));
+					add_asm("==\nNOT");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else if(condition == "IS NOT EQUAL TO"){
-                    add_asm("je _elseIf" + to_string(if_count));
+                    add_asm("==");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else if(condition == "IS GREATER THAN"){
-                    add_asm("jle _elseIf" + to_string(if_count));
+                    add_asm("<=");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else if(condition == "IS LESS THAN"){
-                    add_asm("jge _elseIf" + to_string(if_count));
+                    add_asm(">=");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else if(condition == "IS GREATER THAN OR EQUAL TO"){
-                    add_asm("jl _elseIf" + to_string(if_count));
+                    add_asm("<");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else if(condition == "IS LESS THAN OR EQUAL TO"){
-                    add_asm("jg _elseIf" + to_string(if_count));
+                    add_asm(">");
+                    add_asm("IF:elseIf" + to_string(if_count));
                 }
                 else expectedError(line_number, "VALID CONDITION");
             }
@@ -742,8 +745,8 @@ void compile(vector<string> & line){
             checkLineEnding(line_size, i, line, line_number);
             if(if_stack.empty()) expectedError(line_number, "IF for unmatched ELSE");
             else{
-                add_asm("jmp _endIf"+to_string(if_stack.top()));
-                add_asm("_elseIf"+to_string(if_stack.top())+":");
+                add_asm("JMP:endIf"+to_string(if_stack.top()));
+                add_asm("@elseIf"+to_string(if_stack.top()));
                 if_stack.pop();
             }
         }
@@ -754,11 +757,11 @@ void compile(vector<string> & line){
             if(if_stack.empty()) expectedError(line_number, "IF for unmatched END-IF");
             else{
                 int ifNumber = if_stack.top();
-                string endifAsm = "_endIf"+to_string(ifNumber)+":";
+                string endifAsm = "@endIf"+to_string(ifNumber);
                 if_stack.pop();
                 if(!if_stack.empty() && if_stack.top() == ifNumber){
                     if_stack.pop();
-                    endifAsm = "_elseIf"+to_string(ifNumber)+":\n" + endifAsm;
+                    endifAsm = "@elseIf"+to_string(ifNumber)+"\n" + endifAsm;
                 }
                 add_asm(endifAsm);
             }
@@ -767,10 +770,7 @@ void compile(vector<string> & line){
         else if(procedureSection && token == "END") //DONE
         {
             checkLineEnding(line_size, i, line, line_number);
-            //TODO
-            add_asm("mov rax, 60 ;Exit");
-            add_asm("mov rdi, 0 ;Exit code (0)");
-            add_asm("syscall");
+            add_asm("HALT");
         }
         
         else if(procedureSection && token == "ADD") //DONE
@@ -788,28 +788,31 @@ void compile(vector<string> & line){
             string dest_var = line[i+5].substr(1);
             
             if(is_number(line[i+1]) && is_number(line[i+3])){
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("add rax, "+line[i+3]);
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
+                add_asm("+");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_number(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+3].substr(1);
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("add rax, [__var"+var1+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm("AUX:"+var1);
+                add_asm("+");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_number(line[i+3])){
                 string var1 = line[i+1].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("add rax, "+line[i+3]);
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm(line[i+3]);
+                add_asm("+");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+1].substr(1);
                 string var2 = line[i+3].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("add rax, [__var"+var2+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm("AUX:"+var2);
+                add_asm("+");
+                add_asm("TOAUX:"+dest_var);
             }else typeError(line_number);
-            
-            i+=5;
+            break;
         }
         
         else if(procedureSection && token == "SUBTRACT") //DONE
@@ -827,28 +830,31 @@ void compile(vector<string> & line){
             string dest_var = line[i+5].substr(1);
             
             if(is_number(line[i+1]) && is_number(line[i+3])){
-                add_asm("mov rax, "+line[i+3]);
-                add_asm("sub rax, "+line[i+1]);
-                add_asm("mov [__var"+dest_var+"], rax");
+				add_asm(line[i+3]);
+                add_asm(line[i+1]);
+                add_asm("-");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_number(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+3].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("sub rax, "+line[i+1]);
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm(line[i+1]);
+                add_asm("-");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_number(line[i+3])){
                 string var1 = line[i+1].substr(1);
-                add_asm("mov rax, "+line[i+3]);
-                add_asm("sub rax, [__var"+var1+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+3]);
+                add_asm("AUX:"+var1);
+                add_asm("-");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+1].substr(1);
                 string var2 = line[i+3].substr(1);
-                add_asm("mov rax, [__var"+var2+"]");
-                add_asm("sub rax, [__var"+var1+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var2);
+                add_asm("AUX:"+var1);
+                add_asm("-");
+                add_asm("TOAUX:"+dest_var);
             }else typeError(line_number);
-            
-            i+=5;
+            break;
         }
         
         else if(procedureSection && token == "MULTIPLY") //DONE
@@ -866,104 +872,115 @@ void compile(vector<string> & line){
             string dest_var = line[i+5].substr(1);
             
             if(is_number(line[i+1]) && is_number(line[i+3])){
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("imul rax, "+line[i+3]);
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
+                add_asm("*");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_number(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+3].substr(1);
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("imul rax, [__var"+var1+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm("AUX:"+var1);
+                add_asm("*");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_number(line[i+3])){
                 string var1 = line[i+1].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("imul rax, "+line[i+3]);
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm(line[i+3]);
+                add_asm("*");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+1].substr(1);
                 string var2 = line[i+3].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("imul rax, [__var"+var2+"]");
-                add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm("AUX:"+var2);
+                add_asm("*");
+                add_asm("TOAUX:"+dest_var);
             }else typeError(line_number);
-            
-            i+=5;
+            break;
         }
         
         else if(procedureSection && token == "DIVIDE") //DONE
         {
-            bool withRemainder = false;
-            if(line_size >= 8) withRemainder = (line[i+6] == "REMAINDER");
+            checkLineEnding(line_size, i+5, line, line_number);
             
-            if(!withRemainder)
-                checkLineEnding(line_size, i+5, line, line_number);
-            else
-                checkLineEnding(line_size, i+8, line, line_number);
-            
-            //PRIMERO DEBERIA SHIFTEAR EL DIVIDENDO POR LA CANTIDAD DE
-            //DECIMALES QUE TIENE + LA CANTIDAD DE DECIMALES NO 0 DEL DIVISOR TODO
-            
-            //FORMATS:
-            //DIVIDE <VAR | NUM> BY <VAR | NUM> IN <VAR>
-            //DIVIDE <VAR | NUM> BY <VAR | NUM> IN <VAR> REMAINDER IN <VAR>
+            //FORMAT: DIVIDE <VAR | NUM> BY <VAR | NUM> IN <VAR>
             
             //Check format
             if(line[i+2] != "BY") expectedError(line_number, "BY");
             if(line[i+4] != "IN") expectedError(line_number, "IN");
-            if(withRemainder)
-                if(line[i+7] != "IN") expectedError(line_number, "IN");
-            bool noDestVariable = false;
-            if(line[i+5] == "_"){
-                noDestVariable = true;
-            }
-            if(!noDestVariable && !is_variable(line[i+5]))
+            if(!is_variable(line[i+5]))
                 expectedError(line_number, "DESTINATION VARIABLE");
-            if(withRemainder && !is_variable(line[i+8]))
-                expectedError(line_number, "REMAINDER DESTINATION VARIABLE");
             
             string dest_var = line[i+5].substr(1);
             
-            add_asm("mov rdx, 0");
-            
             if(is_number(line[i+1]) && is_number(line[i+3])){
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("mov rbx, "+line[i+3]);
-                add_asm("idiv rbx");
-                if(!noDestVariable) 
-                    add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
+                add_asm("/");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_number(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+3].substr(1);
-                add_asm("mov rax, "+line[i+1]);
-                add_asm("mov rbx, [__var"+var1+"]");
-                add_asm("idiv rbx");
-                if(!noDestVariable) 
-                    add_asm("mov [__var"+dest_var+"], rax");
+                add_asm(line[i+1]);
+                add_asm("AUX:"+var1);
+                add_asm("/");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_number(line[i+3])){
                 string var1 = line[i+1].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("mov rbx, "+line[i+3]);
-                add_asm("idiv rbx");
-                if(!noDestVariable) 
-                    add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm(line[i+3]);
+                add_asm("/");
+                add_asm("TOAUX:"+dest_var);
             }else if(is_variable(line[i+1]) && is_variable(line[i+3])){
                 string var1 = line[i+1].substr(1);
                 string var2 = line[i+3].substr(1);
-                add_asm("mov rax, [__var"+var1+"]");
-                add_asm("mov rbx, [__var"+var2+"]");
-                add_asm("idiv rbx");
-                if(!noDestVariable) 
-                    add_asm("mov [__var"+dest_var+"], rax");
+                add_asm("AUX:"+var1);
+                add_asm("AUX:"+var2);
+                add_asm("/");
+                add_asm("TOAUX:"+dest_var);
             }else typeError(line_number);
+            break;
+        }
+        
+        else if(procedureSection && token == "MODULO") //DONE
+        {
+            checkLineEnding(line_size, i+5, line, line_number);
             
-            if(withRemainder){
-                string rem_var = line[i+8].substr(1);
-                add_asm("mov [__var"+rem_var+"], rdx");
-            }
+            //FORMAT: MODULO <VAR | NUM> BY <VAR | NUM> IN <VAR>
             
-            if(!withRemainder)
-                i+=5;
-            else
-                i+=8;
+            //Check format
+            if(line[i+2] != "BY") expectedError(line_number, "BY");
+            if(line[i+4] != "IN") expectedError(line_number, "IN");
+            if(!is_variable(line[i+5]))
+                expectedError(line_number, "DESTINATION VARIABLE");
+            
+            string dest_var = line[i+5].substr(1);
+            
+            if(is_number(line[i+1]) && is_number(line[i+3])){
+                add_asm(line[i+1]);
+                add_asm(line[i+3]);
+                add_asm("%");
+                add_asm("TOAUX:"+dest_var);
+            }else if(is_number(line[i+1]) && is_variable(line[i+3])){
+                string var1 = line[i+3].substr(1);
+                add_asm(line[i+1]);
+                add_asm("AUX:"+var1);
+                add_asm("%");
+                add_asm("TOAUX:"+dest_var);
+            }else if(is_variable(line[i+1]) && is_number(line[i+3])){
+                string var1 = line[i+1].substr(1);
+                add_asm("AUX:"+var1);
+                add_asm(line[i+3]);
+                add_asm("%");
+                add_asm("TOAUX:"+dest_var);
+            }else if(is_variable(line[i+1]) && is_variable(line[i+3])){
+                string var1 = line[i+1].substr(1);
+                string var2 = line[i+3].substr(1);
+                add_asm("AUX:"+var1);
+                add_asm("AUX:"+var2);
+                add_asm("%");
+                add_asm("TOAUX:"+dest_var);
+            }else typeError(line_number);
+            break;
         }
         
         //Unknown word
@@ -982,10 +999,7 @@ void compile_lines(vector<vector<string>> & lines){
             if(token[0] == ';'){
                 break;
             }
-            //If token is string not in comment
-            if(token.size() > 2 && token[0] == '"'){
-                token = add_string(token);
-            }
+           
             //If token isn't empty
             if(token.size() > 0){
                 //If token is not number nor string nor variable, upercase it
@@ -1057,19 +1071,7 @@ int main (int argc, char** argv){
     }
     
     //Add exit point
-    add_asm("mov rax, 60 ;Exit");
-    add_asm("mov rdi, 0 ;Exit code (0)");
-    add_asm("syscall");
-    
-    //Add .data section
-    #include "../lib/libvalues.cpp"
-    asm_code = asm_values + "\n" + asm_code;
-    
-    //Add entry point
-    asm_code = "global _start\n" + asm_code;
-    
-    //Add external lib
-    #include "../lib/coblib.cpp"
+    add_asm("HALT");
     
     cout << asm_code << endl;
     
