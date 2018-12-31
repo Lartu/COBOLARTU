@@ -2,7 +2,7 @@
 
 # Mauifish 🐠 
 
-![Stage](https://img.shields.io/badge/stage-alpha-yellow.svg) ![Version](https://img.shields.io/badge/version-0.4-blue.svg)
+![Stage](https://img.shields.io/badge/stage-alpha-yellow.svg) ![Version](https://img.shields.io/badge/version-0.5-blue.svg)
 
 Mauifish is a strongly-typed, procedural programming language loosely based on COBOL syntax. It's compiled and designed to be stable, robust, fast and predictable, while also remaining easy to read. This repository is for the NariVM compiler. At the moment, and as far as I know, this is the only Mauifish compiler there is.
 
