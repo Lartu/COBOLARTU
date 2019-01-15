@@ -1,0 +1,12 @@
+;DATA SECTION
+;PROCEDURE SECTION
+"Lunasm Assembler"
+PRINT
+""
+PRINTLN
+"By Martín del Río, 2018 - 2019"
+PRINT
+""
+PRINTLN
+HALT
+

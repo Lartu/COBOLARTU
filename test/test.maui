@@ -1,0 +1,5 @@
+data:
+
+procedure:
+	display "Lunasm Assembler" crlf
+	display "By Martín del Río, 2018 - 2019" crlf

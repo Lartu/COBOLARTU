@@ -251,7 +251,7 @@ void compile(vector<string> & line){
             if(line_size > 1)
                 unexpectedError(line_number, line[i+1]);
             //Must not be already in DATA: nor PROCEDURE:
-            if(dataSection || procedureSection)  
+            if(dataSection || procedureSection)
                 unexpectedError(line_number, token);
             //Execute
             dataSection = true;
@@ -780,7 +780,7 @@ void compile(vector<string> & line){
             //FORMAT: ADD <VAR | NUM> AND <VAR | NUM> IN <VAR>
             
             //Check format
-            if(line[i+2] != "AND") expectedError(line_number, "AND");
+            if(line[i+2] != "AND" && line[i+2] != "TO") expectedError(line_number, "AND");
             if(line[i+4] != "IN") expectedError(line_number, "IN");
             if(!is_variable(line[i+5]))
                 expectedError(line_number, "DESTINATION VARIABLE");
@@ -822,7 +822,7 @@ void compile(vector<string> & line){
             //FORMAT: SUBTRACT <VAR | NUM> FROM <VAR | NUM> IN <VAR>
             
             //Check format
-            if(line[i+2] != "FROM") expectedError(line_number, "FROM");
+            if(line[i+2] != "FROM"  && line[i+2] != "TO") expectedError(line_number, "FROM");
             if(line[i+4] != "IN") expectedError(line_number, "IN");
             if(!is_variable(line[i+5]))
                 expectedError(line_number, "DESTINATION VARIABLE");
@@ -1028,9 +1028,6 @@ void compile_lines(vector<vector<string>> & lines){
             compile(uncommented_line);
             ++compiled_lines;
         }
-    }
-    if(compiled_lines == 0){
-        add_asm("_start:");
     }
 }
 
